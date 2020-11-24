@@ -1,0 +1,253 @@
+# toolchain
+
+## get toolchain source
+git clone --recursive https://github.com/riscv/riscv-gnu-toolchain
+
+## build with multilib
+./configure --prefix=/opt/riscv --enable-multilib
+
+
+# Simple test
+
+[freedom-e-sdk](https://github.com/sifive/freedom-e-sdk)
+
+git clone --recursive https://github.com/sifive/freedom-e-sdk.git
+
+cd freedom-e-sdk
+
+make PROGRAM=hello TARGET=sifive-hifive1 CONFIGURATION=debug software
+
+qemu-system-riscv32 -nographic -machine sifive_e -kernel software/hello/debug/hello.elf
+
+>> Hello, World!
+
+
+# Build from scratch
+
+
+## check build config
+
+riscv64-unknown-elf-gcc add.c -O0 -g -v
+
+crt0.o, crtbegin.o, -lgcc, --start-group
+
+## Target triplet
+
+[Information](https://wiki.osdev.org/Target_Triplet)
+
+- Target triplet: riscv64-unknown-elf, machine-vendor-operatingsystem
+- Target ISA: rv64imafdc
+- Target ABI, lp64d
+
+## check device tree
+
+[device tree spec](https://buildmedia.readthedocs.org/media/pdf/devicetree-specification/latest/devicetree-specification.pdf)
+
+qemu-system-riscv64 -machine virt -machine dumpdtb=riscv64-virt.dtb
+
+dtc -I dtb -O dts -o riscv64-virt.dts riscv64-virt.dtb
+
+```
+        #address-cells = <0x02>;
+        #size-cells = <0x02>;
+        compatible = "riscv-virtio";
+        model = "riscv-virtio,qemu";
+
+        memory@80000000 {
+                device_type = "memory";
+                reg = <0x00 0x80000000 0x00 0x8000000>;
+        };
+
+```
+
+Memory range(0x00 + 0x80000000, len: 0x00 + 0x8000000), 128M
+
+
+## what is CRTx
+
+```c
+
+Some definitions:
+PIC - position independent code (-fPIC)
+PIE - position independent executable (-fPIE -pie)
+crt - C runtime
+
+
+
+crt0.o crt1.o etc...
+  Some systems use crt0.o, while some use crt1.o (and a few even use crt2.o
+  or higher).  Most likely due to a transitionary phase that some targets
+  went through.  The specific number is otherwise entirely arbitrary -- look
+  at the internal gcc port code to figure out what your target expects.  All
+  that matters is that whatever gcc has encoded, your C library better use
+  the same name.
+
+  This object is expected to contain the _start symbol which takes care of
+  bootstrapping the initial execution of the program.  What exactly that
+  entails is highly libc dependent and as such, the object is provided by
+  the C library and cannot be mixed with other ones.
+
+  On uClibc/glibc systems, this object initializes very early ABI requirements
+  (like the stack or frame pointer), setting up the argc/argv/env values, and
+  then passing pointers to the init/fini/main funcs to the internal libc main
+  which in turn does more general bootstrapping before finally calling the real
+  main function.
+
+  glibc ports call this file 'start.S' while uClibc ports call this crt0.S or
+  crt1.S (depending on what their gcc expects).
+
+crti.o
+  Defines the function prologs for the .init and .fini sections (with the _init
+  and _fini symbols respectively).  This way they can be called directly.  These
+  symbols also trigger the linker to generate DT_INIT/DT_FINI dynamic ELF tags.
+
+  These are to support the old style constructor/destructor system where all
+  .init/.fini sections get concatenated at link time.  Not to be confused with
+  newer prioritized constructor/destructor .init_array/.fini_array sections and
+  DT_INIT_ARRAY/DT_FINI_ARRAY ELF tags.
+
+  glibc ports used to call this 'initfini.c', but now use 'crti.S'.  uClibc
+  also uses 'crti.S'.
+
+crtn.o
+  Defines the function epilogs for the .init/.fini sections.  See crti.o.
+
+  glibc ports used to call this 'initfini.c', but now use 'crtn.S'.  uClibc
+  also uses 'crtn.S'.
+
+Scrt1.o
+  Used in place of crt1.o when generating PIEs.
+gcrt1.o
+  Used in place of crt1.o when generating code with profiling information.
+  Compile with -pg.  Produces output suitable for the gprof util.
+Mcrt1.o
+  Like gcrt1.o, but is used with the prof utility.  glibc installs this as
+  a dummy file as it's useless on linux systems.
+
+crtbegin.o
+  GCC uses this to find the start of the constructors.
+crtbeginS.o
+  Used in place of crtbegin.o when generating shared objects/PIEs.
+crtbeginT.o
+  Used in place of crtbegin.o when generating static executables.
+crtend.o
+  GCC uses this to find the start of the destructors.
+crtendS.o
+  Used in place of crtend.o when generating shared objects/PIEs.
+
+
+
+General linking order:
+crt1.o crti.o crtbegin.o [-L paths] [user objects] [gcc libs] [C libs] [gcc libs] crtend.o crtn.o
+
+More references:
+    http://gcc.gnu.org/onlinedocs/gccint/Initialization.html
+```
+
+## Link scripts
+
+// export default one
+
+riscv64-unknown-elf-ld --verbose > riscv64-virt.ld
+
+```shell
+
+OUTPUT_ARCH(riscv)
+/* Add Begin */
+MEMORY
+{
+   /* qemu-system-risc64 virt machine */
+   RAM (rwx)  : ORIGIN = 0x80000000, LENGTH = 128M 
+}
+/* Add End */
+
+SECTIONS
+{
+  /* Read-only sections, merged into text segment: */
+  PROVIDE (__executable_start = SEGMENT_START("text-segment", 0x10000));
+  . = SEGMENT_START("text-segment", 0x10000) + SIZEOF_HEADERS;
+  /* >>> Our addition. <<< */
+  PROVIDE(__stack_top = ORIGIN(RAM) + LENGTH(RAM));
+  /* >>> End of our addition. <<< */
+  .interp         : { *(.interp) }
+  ...
+}
+
+
+```
+
+# Own crt0.s
+
+
+## [CFI reference](https://sourceware.org/binutils/docs/as/CFI-directives.html)
+
+```c
+
+/* section .init, a: allocatable, x: executable */
+.section .init, "ax"
+
+/* make the symbol available to ld, ENTRY(_start) */
+.global _start
+
+
+/* we start at symbol _start */
+_start:
+    /* start function */
+    .cfi_startproc
+
+    /* ra should not be restore */
+    .cfi_undefined ra
+
+    /* save assembly options */
+    .option push
+
+    /* since we relax addressing sequences to shorter GP-relative sequences when possible, 
+       the initial load of GP must not be relaxed and should be emitted as something like: 
+       https://embarc.org/man-pages/as/RISC_002dV_002dDirectives.html*/
+    .option norelax    
+
+    la gp, __global_pointer$
+
+    /* restore assembly options */
+    .option pop
+
+    /* stack pointer */    
+    la sp, __stack_top
+
+    /* set frame pointer s0 as 0 */
+    add s0, sp, zero
+
+    /* jump and link 
+       set next pc(pc + 4) to rd, then set pc = pc + offset
+       free jump
+    */
+    jal zero, main
+
+    /* end function */
+    .cfi_endproc
+
+    /* end of asm file */
+    .end
+
+```
+
+## RISC-V register conventions
+
+[RISC-V assembly guide](https://github.com/riscv/riscv-asm-manual/blob/master/riscv-asm.md#general-registers)
+
+
+
+
+
+
+
+# Link
+
+-ffeestanding
+
+[the standard library may not exists](https://stackoverflow.com/questions/17692428/what-is-ffreestanding-option-in-gcc#17692510)
+
+
+
+
+
