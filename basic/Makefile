@@ -5,6 +5,7 @@ CROSS_COMPILE=riscv64-unknown-elf-
 LD=${CROSS_COMPILE}ld
 CC=${CROSS_COMPILE}gcc
 OBJDUMP=${CROSS_COMPILE}objdump
+NM=${CROSS_COMPILE}nm
 GDB=${CROSS_COMPILE}gdb
 
 PROG=basic
@@ -21,8 +22,13 @@ LDFLAGS=--gc-sections -nostartfiles -nostdlib -nodefaultlibs
 %.o:%.S
 	${CC} -c ${CFLAGS} -o $@ $<
 
-${PROG}: main.o startup.o
+OBJS=main.o startup.o uart.o #ns16550a.o
+
+${PROG}: ${OBJS}
 	${LD} ${LDFLAGS} -Triscv64-virt.ld -o $@ $^
+
+run:${PROG}
+	${QEMU} -kernel ${PROG}
 
 gdb_server:${PROG}
 	${QEMU} -gdb tcp::1234 -S -kernel ${PROG}
@@ -31,14 +37,17 @@ gdb_server:${PROG}
 gdb_client:${PROG}
 	${GDB} ${PROG} -ex "target remote :1234" -ex "b main"	
 
-section:
+section:${PROG}
 	${OBJDUMP} -hww ${PROG}
 
-symbols:
+symbols:${PROG}
 	${OBJDUMP} -t ${PROG}
 
-asm:
+asm:${PROG}
 	${OBJDUMP} -D ${PROG} > ${PROG}.s
+
+nm:${PROG}
+	${NM} $<
 
 dts:
 	${QEMU} -machine dumpdtb=riscv64-virt.dtb
