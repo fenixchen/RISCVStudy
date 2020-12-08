@@ -29,12 +29,12 @@ _start:
 
     /* set frame pointer s0 as 0 */
     add s0, sp, zero
-
+    
     /* jump and link
        set next pc(pc + 4) to rd, then set pc = pc + offset
        free jump
     */
-    jal zero, main
+    jal zero, boot_main
 
     /* end function */
     .cfi_endproc

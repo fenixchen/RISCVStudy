@@ -1,9 +1,10 @@
 #ifndef _RISCV_H_
 #define _RISCV_H_
+#include <stdint.h>
+
 
 // which hart (core) is this?
-static inline uint64_t
-r_mhartid() {
+static inline uint64_t r_mhartid() {
     uint64_t x;
     asm volatile("csrr %0, mhartid" : "=r" (x) );
     return x;
@@ -17,23 +18,20 @@ r_mhartid() {
 #define MSTATUS_MPP_U (0L << 11)
 #define MSTATUS_MIE (1L << 3)    // machine-mode interrupt enable.
 
-static inline uint64_t
-r_mstatus() {
+static inline uint64_t r_mstatus() {
     uint64_t x;
     asm volatile("csrr %0, mstatus" : "=r" (x) );
     return x;
 }
 
-static inline void
-w_mstatus(uint64_t x) {
+static inline void w_mstatus(uint64_t x) {
     asm volatile("csrw mstatus, %0" : : "r" (x));
 }
 
 // machine exception program counter, holds the
 // instruction address to which a return from
 // exception will go.
-static inline void
-w_mepc(uint64_t x) {
+static inline void w_mepc(uint64_t x) {
     asm volatile("csrw mepc, %0" : : "r" (x));
 }
 
@@ -45,8 +43,7 @@ w_mepc(uint64_t x) {
 #define SSTATUS_SIE (1L << 1)  // Supervisor Interrupt Enable
 #define SSTATUS_UIE (1L << 0)  // User Interrupt Enable
 
-static inline uint64_t
-r_sstatus() {
+static inline uint64_t r_sstatus() {
     uint64_t x;
     asm volatile("csrr %0, sstatus" : "=r" (x) );
     return x;
@@ -319,5 +316,9 @@ sfence_vma() {
 typedef uint64_t pte_t;
 typedef uint64_t *pagetable_t; // 512 PTEs
 
+
+static inline int cpuid() {
+    return 0;
+}
 
 #endif

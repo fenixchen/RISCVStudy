@@ -1,3 +1,5 @@
+#include "uart.h"
+
 #define UART0 0x10000000
 
 // the UART control registers are memory-mapped
@@ -29,44 +31,45 @@
 #define WriteReg(reg, v) (*(Reg(reg)) = (v))
 
 
-void uart_init(void){
-  // disable interrupts.
-  WriteReg(IER, 0x00);
+void uart_init(void) {
+    // disable interrupts.
+    WriteReg(IER, 0x00);
 
-  // special mode to set baud rate.
-  WriteReg(LCR, LCR_BAUD_LATCH);
+    // special mode to set baud rate.
+    WriteReg(LCR, LCR_BAUD_LATCH);
 
-  // LSB for baud rate of 38.4K.
-  WriteReg(0, 0x03);
+    // LSB for baud rate of 38.4K.
+    WriteReg(0, 0x03);
 
-  // MSB for baud rate of 38.4K.
-  WriteReg(1, 0x00);
+    // MSB for baud rate of 38.4K.
+    WriteReg(1, 0x00);
 
-  // leave set-baud mode,
-  // and set word length to 8 bits, no parity.
-  WriteReg(LCR, LCR_EIGHT_BITS);
+    // leave set-baud mode,
+    // and set word length to 8 bits, no parity.
+    WriteReg(LCR, LCR_EIGHT_BITS);
 
-  // reset and enable FIFOs.
-  WriteReg(FCR, FCR_FIFO_ENABLE | FCR_FIFO_CLEAR);
+    // reset and enable FIFOs.
+    WriteReg(FCR, FCR_FIFO_ENABLE | FCR_FIFO_CLEAR);
 
-  // enable transmit and receive interrupts.
-  WriteReg(IER, IER_TX_ENABLE | IER_RX_ENABLE);
+    // enable transmit and receive interrupts.
+    //WriteReg(IER, IER_TX_ENABLE | IER_RX_ENABLE);
+    WriteReg(IER, IER_RX_ENABLE);
 }
 
 
 
-void uart_putc(int c){
-	while (!(ReadReg(LSR) & LSR_TX_IDLE));
-	WriteReg(THR, c);
+void uart_putc(int c) {
+    while (!(ReadReg(LSR) & LSR_TX_IDLE));
+    WriteReg(THR, c);
 }
 
-void uart_puts(const char* s){
-	while (s && *s){
+void uart_puts(const char* s) {
+    while (s && *s) {
         uart_putc(*s++);
     }
 }
 
-int uart_getc(){
+int uart_getc() {
     if(ReadReg(LSR) & 0x01) {
         // input data is ready.
         return ReadReg(RHR);

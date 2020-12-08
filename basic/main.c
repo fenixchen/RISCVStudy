@@ -1,16 +1,12 @@
 #include <stdint.h>
-#include "uart.h"
-#include "riscv.h"
+#include "printf.h"
 
-void kernelvec();
+int main() {        
+    printf("Hello RISCV\n");    
 
-int main(){
-	uart_init();
+    printf(">> Done\n");
 
-    w_stvec((uint64_t)kernelvec);
+    while (1);
 
-    puts("Hello RISCV\n");
-
-    puts(">> Done\n");
-	return 0;
+    return 0;
 }

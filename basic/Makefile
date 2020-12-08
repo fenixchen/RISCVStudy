@@ -65,3 +65,7 @@ lds:
 
 clean:
 	-rm ${PROG} *.dtb *.dts riscv64-virt-verbose.ld *.o *.s -rf
+
+format:
+	astyle --style=google "*.h" -R -n -p -e -j
+	astyle --style=google "*.c" -R -n -p -e -j
