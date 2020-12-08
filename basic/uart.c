@@ -60,3 +60,17 @@ void uart_putc(int c){
 	WriteReg(THR, c);
 }
 
+void uart_puts(const char* s){
+	while (s && *s){
+        uart_putc(*s++);
+    }
+}
+
+int uart_getc(){
+    if(ReadReg(LSR) & 0x01) {
+        // input data is ready.
+        return ReadReg(RHR);
+    } else {
+        return -1;
+    }
+}

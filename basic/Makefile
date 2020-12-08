@@ -12,7 +12,7 @@ PROG=basic
 
 all: ${PROG}
 
-CFLAGS=-O0 -g -Wall
+CFLAGS=-O0 -g -Wall -mcmodel=medany
 
 LDFLAGS=--gc-sections -nostartfiles -nostdlib -nodefaultlibs
 
@@ -22,7 +22,14 @@ LDFLAGS=--gc-sections -nostartfiles -nostdlib -nodefaultlibs
 %.o:%.S
 	${CC} -c ${CFLAGS} -o $@ $<
 
-OBJS=main.o startup.o uart.o #ns16550a.o
+
+C_SRCS=$(wildcard *.c)
+
+ASM_SRCS=$(wildcard *.S)
+
+OBJS=$(patsubst %.c,%.o,${C_SRCS})
+
+OBJS+=$(patsubst %.S,%.o,${ASM_SRCS})
 
 ${PROG}: ${OBJS}
 	${LD} ${LDFLAGS} -Triscv64-virt.ld -o $@ $^

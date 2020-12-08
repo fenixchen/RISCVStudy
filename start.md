@@ -192,4 +192,6 @@ _start:
 
 
 
+# cmodel
 
+Add -mcmodel=medany for global_pointer cannot reach some variable in bss/rodata/sdata
