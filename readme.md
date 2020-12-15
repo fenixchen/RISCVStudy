@@ -18,9 +18,10 @@ dot     rd rs1 rs2 31..25=1  14..12=0 6..2=0x1A 1..0=3
 ./parse_opcodes -c opcodes-rv32i  > dot.h
 
 # download toolchain source
+git clone https://github.com/riscv/riscv-gnu-toolchain.git
+
 git clone https://gitee.com/mirrors/riscv-gnu-toolchain.git
 
-git clone https://github.com/riscv/riscv-gnu-toolchain.git
 
 cd riscv-gnu-toolchain
 git submodule update --init riscv-binutils
@@ -30,6 +31,17 @@ git submodule update --init riscv-dejagnu
 git submodule update --init riscv-newlib
 git submodule update --init riscv-gdb
 
+
+# build rv32 toolchain
+
+
+./configure --prefix=/opt/rv32 --with-arch=rv32imac --with-abi=ilp32
+
+sudo make -j15
+
+
+## build with multilib
+./configure --prefix=/opt/riscv --enable-multilib
 
 # Change binutils
 
