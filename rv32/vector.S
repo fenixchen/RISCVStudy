@@ -90,13 +90,13 @@ timervec:
         
         csrrw a0, mscratch, a0
         sw a1, 0(a0)
-        sw a2, 8(a0)
-        sw a3, 16(a0)
+        sw a2, 4(a0)
+        sw a3, 8(a0)
 
         # schedule the next timer interrupt
         # by adding interval to mtimecmp.
-        lw a1, 32(a0) # CLINT_MTIMECMP(hart)
-        lw a2, 40(a0) # interval
+        lw a1, 16(a0) # CLINT_MTIMECMP(hart)
+        lw a2, 20(a0) # interval
         lw a3, 0(a1)
         add a3, a3, a2
         sw a3, 0(a1)
@@ -105,8 +105,8 @@ timervec:
         li a1, 2
         csrw sip, a1
 
-        lw a3, 16(a0)
-        lw a2, 8(a0)
+        lw a3, 8(a0)
+        lw a2, 4(a0)
         lw a1, 0(a0)
         csrrw a0, mscratch, a0
 
