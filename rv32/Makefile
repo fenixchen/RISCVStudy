@@ -1,20 +1,20 @@
 
-QEMU=qemu-system-riscv64 -machine virt -bios none -m 128M -nographic
+QEMU=qemu-system-riscv32 -machine virt -bios none -m 128M -nographic
 
-CROSS_COMPILE=riscv64-unknown-elf-
-LD=${CROSS_COMPILE}ld
+CROSS_COMPILE=riscv32-unknown-elf-
+LD=${CROSS_COMPILE}gcc
 CC=${CROSS_COMPILE}gcc
 OBJDUMP=${CROSS_COMPILE}objdump
 NM=${CROSS_COMPILE}nm
 GDB=${CROSS_COMPILE}gdb
 
-PROG=rv64_test
+PROG=rv32_test
 
 all: ${PROG}
 
 CFLAGS=-O0 -g -Wall -mcmodel=medany
 
-LDFLAGS=--gc-sections -nostartfiles -nostdlib -nodefaultlibs
+LDFLAGS=-Wl,--gc-sections -nostartfiles -nostdlib -nodefaultlibs
 
 %.o:%.c
 	${CC} -c ${CFLAGS} -o $@ $<
@@ -32,7 +32,7 @@ OBJS=$(patsubst %.c,%.o,${C_SRCS})
 OBJS+=$(patsubst %.S,%.o,${ASM_SRCS})
 
 ${PROG}: ${OBJS}
-	${LD} ${LDFLAGS} -Triscv64-virt.ld -o $@ $^
+	${LD} ${LDFLAGS} -Triscv32-virt.ld -o $@ $^ -lc -lgcc
 
 run:${PROG}
 	${QEMU} -kernel ${PROG}
@@ -57,14 +57,14 @@ nm:${PROG}
 	${NM} $<
 
 dts:
-	${QEMU} -machine dumpdtb=riscv64-virt.dtb
-	dtc -I dtb -O dts -o riscv64-virt.dts riscv64-virt.dtb
+	${QEMU} -machine dumpdtb=riscv32-virt.dtb
+	dtc -I dtb -O dts -o riscv32-virt.dts riscv32-virt.dtb
 
 lds:
-	$(LD) --verbose > riscv64-virt-verbose.ld
+	$(CROSS_COMPILE)ld --verbose > riscv32-virt-verbose.ld
 
 clean:
-	-rm ${PROG} *.dtb *.dts riscv64-virt-verbose.ld *.o *.s -rf
+	-rm ${PROG} *.dtb *.dts riscv32-virt-verbose.ld *.o *.s -rf
 
 format:
 	astyle --style=google "*.h" -R -n -p -e -j
