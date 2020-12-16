@@ -22,7 +22,7 @@ void virtio_disk_intr(int i) {
 }
 
 
-volatile uint64_t ticks;
+volatile uint32_t ticks;
 
 
 void clockintr() {
@@ -43,7 +43,7 @@ void kerneltrap() {
         panic("kerneltrap: interrupts enabled");
     }
 
-    if((scause & 0x8000000000000000L) && (scause & 0xff) == 9) {
+    if((scause & 0x80000000L) && (scause & 0xff) == 9) {
         // this is a supervisor external interrupt, via PLIC.
 
         // irq indicates which device interrupted.
@@ -57,7 +57,7 @@ void kerneltrap() {
             }
         plic_complete(irq);
     } else {
-        if(scause == 0x8000000000000001L) {
+        if(scause == 0x80000001L) {
             // software interrupt from a machine-mode timer interrupt,
             // forwarded by timervec in kernelvec.S.
             if(cpuid() == 0) {
