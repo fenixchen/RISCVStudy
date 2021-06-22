@@ -1,9 +1,12 @@
 # riscv-tools
 
+```
 sudo apt-get install autoconf automake autotools-dev curl libmpc-dev libmpfr-dev libgmp-dev libusb-1.0-0-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev device-tree-compiler pkg-config libexpat-dev
+```
 
 
 # download opcodes
+```shell
 git clone https://github.com/riscv/riscv-opcodes
 
 sudo apt-get install python3-pip
@@ -15,13 +18,14 @@ vi opcodes-rv32i
 
 dot     rd rs1 rs2 31..25=1  14..12=0 6..2=0x1A 1..0=3
 
-./parse_opcodes -c opcodes-rv32i  > dot.h
+./parse_opcodes -c opcodes-rv32i  > dot.h 
+```
 
 # download toolchain source
+```shell
 git clone https://github.com/riscv/riscv-gnu-toolchain.git
 
 git clone https://gitee.com/mirrors/riscv-gnu-toolchain.git
-
 
 cd riscv-gnu-toolchain
 git submodule update --init riscv-binutils
@@ -30,14 +34,20 @@ git submodule update --init riscv-glibc
 git submodule update --init riscv-dejagnu
 git submodule update --init riscv-newlib
 git submodule update --init riscv-gdb
+```
+
+
 
 
 # build rv32 toolchain
 
-
+```shell
 ./configure --prefix=/opt/rv32 --with-arch=rv32imac --with-abi=ilp32
 
 sudo make -j15
+```
+
+
 
 
 ## build with multilib
@@ -100,6 +110,7 @@ sudo make -j15
 
 # test
 
+```c
 vi haha_test.c
 
 void haha_test(int res){
@@ -117,3 +128,5 @@ void main(void){
 /opt/rv32_with_haha/bin/riscv32-unknown-elf-gcc -o haha haha_test.c
 
 /opt/rv32_with_haha/bin/riscv32-unknown-elf-objdump -d haha
+```
+
