@@ -54,15 +54,21 @@ Place each function & data element in their own section
 # build for windows
 
 cd ~/ct-ng/share/crosstool-ng/samples
+
 cp riscv32-unknown-elf/ riscv32-unknown-elf.mingw32  -rf
+
 cd riscv32-unknown-elf.mingw32
 
 vi crosstool.config
+
 Add two lines
+
 CT_CANADIAN=y
+
 CT_HOST="x86_64-w64-mingw32"
 
 
 cd build_win
+
 ct-ng riscv32-unknown-elf.mingw32
 
